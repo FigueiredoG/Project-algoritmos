@@ -1,12 +1,17 @@
 import requests
 from bs4 import BeautifulSoup
-import time 
+from datetime import date
+from datetime import timedelta
 import pandas as pd
-testador = ''
 listaPromos = []
 listaDatas=[]
 ListaGeral = []
-for pagina in range(1,3000):
+DataAtual= date.today()
+DataCorrigida = DataAtual.strftime('%d/%m/%Y')
+Ontem = DataAtual - timedelta(days = 1)
+DataOntem = Ontem.strftime('%d/%m/%Y')
+
+for pagina in range(1,2000):
     url = 'https://www.hardmob.com.br/forums/407-Promocoes/page' + str(pagina)
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0'}
     response = requests.get(url,headers=headers)
@@ -18,14 +23,23 @@ for pagina in range(1,3000):
         titulo = promo.find('a', attrs = {'class': 'title'})
         listaPromos.append(titulo.text)
     for data in datas:
-        testador = data.previous_element
-        if testador == ',':
-            
-        listaDatas.append(testador)    
+        Datas = data.previous_element
+        Datas = Datas.replace(",", " ")
+        Datas = Datas.replace(" ", "")
+        Datas = Datas.replace("-", "/")
+        if Datas == 'Hoje':
+            Datas = str(DataCorrigida)
+        elif Datas == 'Ontem':
+            Datas=DataOntem
+        listaDatas.append(Datas)    
+        
     for i in range (len(listaPromos)-2):
-        ListaGeral.append([listaPromos[i+2],listaDatas[i+2]])
+        try:
+            ListaGeral.append([listaPromos[i+2],listaDatas[i+2]])
+        except:
+            break
     listaPromos.clear()
     listaDatas.clear()
         
-promocoes = pd.DataFrame(ListaGeral, columns=['Geral','ola'])
-promocoes.to_excel('PromocoesHardmob.xlsx')
+promocoes = pd.DataFrame(ListaGeral, columns=['Geral','Datas'])
+promocoes.to_excel('PromocoesHardmobAtualizado.xlsx')
